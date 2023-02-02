@@ -1,0 +1,54 @@
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: vault-db-creds
+spec:
+  provider: vault
+  secretObjects:
+  - data:
+    - key: password
+      objectName: dbPassword
+    - key: username
+      objectName: dbUsername
+    secretName: dbpass
+    type: Opaque
+  parameters:
+    roleName: 'vault-k8s-app'
+    # vaultAddress: 'https://vault.vault:8200'
+    # vaultCACertPath: '/vault/tls/ca.crt'
+    objects: |
+      - objectName: "dbPassword"
+        secretPath: "k8secret/data/devwebapp/config"
+        secretKey: "username"
+      - objectName: "dbUsername"
+        secretPath: "k8secret/data/devwebapp/config"
+        secretKey: "password"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault-secret-test
+  labels:
+    app: vault-secret-test
+spec:
+  serviceAccountName: vault-k8s-app
+  containers:
+    - name: app
+      image: ubuntu
+      command: ["sleep"]
+      args: ["infinity"]
+      volumeMounts:
+        - name: 'vault-db-creds'
+          mountPath: '/mnt/secrets-store'
+          readOnly: true
+      envFrom:
+      - secretRef:
+          name: dbpass
+  volumes:
+    - name: vault-db-creds
+      csi:
+        driver: 'secrets-store.csi.k8s.io'
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: 'vault-db-creds'

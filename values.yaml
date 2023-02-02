@@ -1,0 +1,21 @@
+global:
+  externalVaultAddr: https://vault.priv.your-vnc.oraclevcn.com:8200
+server:
+  enabled: false
+  dev:
+    enabled: false
+injector:
+  enabled: false
+csi:
+  enabled: true
+  debug: false
+  volumes:
+    - name: tls
+      secret:
+        secretName: vault-tls
+  volumeMounts:
+    - name: tls
+      mountPath: /vault/tls
+      readOnly: true
+  extraArgs:
+    - "-vault-tls-ca-cert=/vault/tls/vault-ca.pem"
